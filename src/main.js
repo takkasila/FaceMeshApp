@@ -9,13 +9,10 @@ window.addEventListener('load', main);
 
 function main() {
 
-	console.log(FaceMesh);
-
 	const videoElement = document.getElementsByClassName('input_video')[0];
+	// 	Hide input video
+	videoElement.style.display = 'none';
 	const canvasElement = document.getElementsByClassName('output_canvas')[0];
-
-	const canvasElements = document.getElementsByClassName('output_canvas')[0];
-
 
 	const canvasCtx = canvasElement.getContext('2d');
 
@@ -38,6 +35,14 @@ function main() {
 				drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, { color: '#E0E0E0' });
 			}
 		}
+
+		if( results.multiFaceGeometry ){
+			const faceGeo = results.multiFaceGeometry[0];
+			const mat = faceGeo.getPoseTransformMatrix();
+			console.log( mat.getPackedDataList() );
+
+			// TODO: Use THREE.js draw and transform face geometry
+		}
 		canvasCtx.restore();
 	}
 
@@ -48,10 +53,15 @@ function main() {
 	});
 
 	faceMesh.setOptions({
+		cameraNear: 1,
+		cameraFar: 2000,
+		cameraVerticalFovDegrees: 53,
+		enableFaceGeometry: true,
+		selfieMode: true,
 		maxNumFaces: 1,
-		refineLandmarks: true,
+		refineLandmarks: false,
 		minDetectionConfidence: 0.5,
-		minTrackingConfidence: 0.5
+		minTrackingConfidence: 0.5,
 	});
 	faceMesh.onResults(onResults);
 
