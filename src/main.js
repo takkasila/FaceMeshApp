@@ -1,7 +1,8 @@
-import './mediapipe/camera_utils/camera_utils.js';
 import './mediapipe/face_mesh/face_mesh.js';
+import './mediapipe/camera_utils/camera_utils.js';
 
 import { Renderer } from './Renderer.js';
+
 
 window.addEventListener('load', main);
 

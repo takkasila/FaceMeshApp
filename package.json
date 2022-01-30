@@ -13,7 +13,9 @@
 		"@mediapipe/control_utils": "^0.6.1629159505",
 		"@mediapipe/drawing_utils": "^0.3.1620248257",
 		"@mediapipe/face_mesh": "^0.4.1633559619",
-		"express": "^4.17.2"
+		"express": "^4.17.2",
+		"three-wtm": "^1.0.1",
+		"wwobjloader2": "^4.0.1"
 	},
 	"devDependencies": {
 		"three": "^0.136.0"

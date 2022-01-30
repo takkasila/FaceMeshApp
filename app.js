@@ -7,6 +7,9 @@ app.use(express.static(__dirname + '/src'))
 app.use('/three/', express.static(path.join(__dirname, 'node_modules/three')));
 app.use('/jsm/', express.static(path.join(__dirname, 'node_modules/three/examples/jsm/')));
 
+app.use('/three-wtm/', express.static(path.join(__dirname, 'node_modules/three-wtm/')));
+app.use('/wwobjloader2/', express.static(path.join(__dirname, 'node_modules/wwobjloader2/')));
+
 app.use('/mediapipe/', express.static(path.join(__dirname, 'node_modules/@mediapipe')));
 
 app.listen(5000, () =>
