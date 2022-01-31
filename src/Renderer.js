@@ -19,9 +19,9 @@ export class Renderer
 		this.canvas = canvas;
 
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera( 53, this.canvas.width / this.canvas.height, 0.1, 2000 );
-		this.camera.position.set( 5, 5, 5 );
-		this.camera.lookAt( 0, 0, 0 );
+		this.camera = new THREE.PerspectiveCamera( 66, this.canvas.width / this.canvas.height, 0.1, 2000 );
+		this.camera.position.set( 0, 0, 0 );
+		this.camera.lookAt( 0, 0, -1 );
 
 		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas } );
 		this.renderer.setSize( this.canvas.width, this.canvas.height );
@@ -29,11 +29,6 @@ export class Renderer
 		// 	Scene
 		const axesHelper = new THREE.AxesHelper( 3 );
 		this.scene.add( axesHelper );
-
-		const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-		const greenWireframeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
-		const cube = new THREE.Mesh( geometry, greenWireframeMaterial );
-		this.scene.add( cube );
 
 
 		// 	Instantiate the OBJLoader2
@@ -47,6 +42,7 @@ export class Renderer
 			thisObject.faceModelMesh = object.children[0];
 			thisObject.scene.add( thisObject.faceModelMesh );
 			
+			const greenWireframeMaterial = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
 			thisObject.faceModelMesh.material = greenWireframeMaterial;
 
 			// 	Set BufferAttribute usage to THREE.StreamDrawUsage for increased performance.
@@ -73,15 +69,13 @@ export class Renderer
 			}
 		);
 
-
-		this.controls = new OrbitControls( this.camera, this.canvas );
-
-		this.controls.update();
+		// this.controls = new OrbitControls( this.camera, this.canvas );
+		// this.controls.update();
 	}
 
 	render( faceMeshResult )
 	{
-		this.controls.update();
+		// this.controls.update();
 
 		const texture = new THREE.CanvasTexture( faceMeshResult.image );
 		this.scene.background = texture;
@@ -92,9 +86,6 @@ export class Renderer
 
 			if( faceGeometry === undefined )
 				return;
-
-			// 	Get head transformation matrix. The result is in row-major
-			const transformMatrix = matrixDataToMatrix( faceGeometry.getPoseTransformMatrix() ).flat();
 
 			const mesh = faceGeometry.getMesh();
 			// 	5 * 468
@@ -132,10 +123,17 @@ export class Renderer
 			positionAttr.needsUpdate = true;
 			indexAttr.needsUpdate = true;
 
-			console.log(positionAttr.count);
-			console.log(indexAttr.count);
+
+			// 	Get head transformation matrix. The result is in row-major
+			const matrixArray = matrixDataToMatrix( faceGeometry.getPoseTransformMatrix() ).flat();
+			const matrix = new THREE.Matrix4().fromArray( matrixArray ).transpose();
+
+			this.faceModelMesh.matrix.copy( matrix );
+			this.faceModelMesh.matrixAutoUpdate = false;
+
 		}
 
 		this.renderer.render( this.scene, this.camera );
+
 	}
 }
