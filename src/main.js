@@ -2,7 +2,7 @@ import './mediapipe/face_mesh/face_mesh.js';
 import './mediapipe/camera_utils/camera_utils.js';
 import Stats from 'three/examples/jsm/libs/stats.module'
 import { GUI } from 'dat.gui'
-import { Renderer } from './Renderer.js';
+import { Renderer, transformDict } from './Renderer.js';
 
 
 window.addEventListener('load', main);
@@ -60,9 +60,20 @@ function main() {
 
 	// 	GUI
 	const gui = new GUI()
+	// 		Camera
 	const cameraFolder = gui.addFolder('Camera')
 	cameraFolder.add( renderer.camera, 'fov', 10, 100 ).onChange( ()=>{
 		renderer.camera.updateProjectionMatrix();
 	} )
 	// cameraFolder.open()
+
+	// 		Glasses Offset
+	const glassesTransformDict = transformDict;
+	const glassesFolder = gui.addFolder('Glasses')
+	glassesFolder.add( glassesTransformDict.position, 'x', -5, 5, 0.001 ).onChange( ()=>renderer.updateGlassesOffsetPosition( glassesTransformDict ) );
+	glassesFolder.add( glassesTransformDict.position, 'y', -5, 5, 0.001 ).onChange( ()=>renderer.updateGlassesOffsetPosition( glassesTransformDict ) );
+	glassesFolder.add( glassesTransformDict.position, 'z', -5, 5, 0.001 ).onChange( ()=>renderer.updateGlassesOffsetPosition( glassesTransformDict ) );
+	glassesFolder.add( glassesTransformDict, 'scale', 1, 2, 0.001 ).onChange( ()=>renderer.updateGlassesOffsetScale( glassesTransformDict ) );
+	// glassesFolder.open();
+	
 }
