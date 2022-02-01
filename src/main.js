@@ -64,5 +64,5 @@ function main() {
 	cameraFolder.add( renderer.camera, 'fov', 10, 100 ).onChange( ()=>{
 		renderer.camera.updateProjectionMatrix();
 	} )
-	cameraFolder.open()
+	// cameraFolder.open()
 }

@@ -108,7 +108,11 @@ export class Renderer
 				positionAttr.array[ i * 3 ] = x;
 				positionAttr.array[ i * 3 + 1 ] = y;
 				positionAttr.array[ i * 3 + 2 ] = z;
+			}
 
+			// 	Update mesh indicies
+			for( let i = 0; i < 898; i++ )
+			{
 				// 	Index
 				const f1 = indicies[ i * 3 ];
 				const f2 = indicies[ i * 3 + 1 ];
