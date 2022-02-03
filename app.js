@@ -14,6 +14,9 @@ app.use('/wwobjloader2/', express.static(path.join(__dirname, 'node_modules/wwob
 
 app.use('/mediapipe/', express.static(path.join(__dirname, 'node_modules/@mediapipe')));
 
+app.use('/file-saver/', express.static(path.join(__dirname, 'node_modules/file-saver')));
+
+
 app.listen(5000, () =>
 	console.log('Visit http://localhost:5000')
 );

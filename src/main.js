@@ -2,7 +2,7 @@ import './mediapipe/face_mesh/face_mesh.js';
 import './mediapipe/camera_utils/camera_utils.js';
 import Stats from 'three/examples/jsm/libs/stats.module'
 import { GUI } from 'dat.gui'
-import { Renderer, transformDict } from './Renderer.js';
+import { Renderer, GlassesTransformDict } from './Renderer.js';
 
 
 window.addEventListener('load', main);
@@ -68,7 +68,7 @@ function main() {
 	// cameraFolder.open()
 
 	// 		Glasses Offset
-	const glassesTransformDict = transformDict;
+	const glassesTransformDict = GlassesTransformDict;
 	const glassesFolder = gui.addFolder('Glasses')
 	glassesFolder.add( glassesTransformDict.position, 'x', -5, 5, 0.001 ).onChange( ()=>renderer.updateGlassesOffsetPosition( glassesTransformDict ) );
 	glassesFolder.add( glassesTransformDict.position, 'y', -5, 5, 0.001 ).onChange( ()=>renderer.updateGlassesOffsetPosition( glassesTransformDict ) );

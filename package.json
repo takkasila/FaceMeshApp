@@ -15,6 +15,7 @@
 		"@mediapipe/face_mesh": "^0.4.1633559619",
 		"dat.gui": "^0.7.7",
 		"express": "^4.17.2",
+		"file-saver": "^2.0.5",
 		"three-wtm": "^1.0.1",
 		"wwobjloader2": "^4.0.1"
 	},

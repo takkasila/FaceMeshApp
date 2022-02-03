@@ -3,11 +3,16 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { OBJLoader2 } from 'wwobjloader2';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { OBJExporter } from 'three/examples/jsm/exporters/OBJExporter';
 
-export const transformDict = {
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
+
+import 'file-saver';
+
+export const GlassesTransformDict = {
 	'position': {
 		'x': 0
-		, 'y': 0.007
+		, 'y': -0.691
 		, 'z': -0.875
 	},
 	'scale': 1.479
@@ -28,6 +33,8 @@ export class Renderer
 	glassesMesh_defaultQuarternion = new THREE.Quaternion();
 	glassesMesh_defaultScale = new THREE.Vector3();
 
+	faceBaseMeshGLTF;
+
 	constructor( canvas )
 	{
 
@@ -42,9 +49,11 @@ export class Renderer
 		// 	For OrbitControl view
 		// this.camera.position.set( 5, 5, 5 );
 		// this.camera.lookAt( 0, 0, 0 );
+		
+		// this.controls = new OrbitControls( this.camera, this.canvas );
+		// this.controls.update();
 
-
-		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas } );
+		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas, alpha:true, antialias : true } );
 		this.renderer.setSize( this.canvas.width, this.canvas.height );
 
 		// 	Scene
@@ -56,15 +65,28 @@ export class Renderer
 		const objLoader = new OBJLoader2();
 		objLoader.setUseIndices(true);
 
+		// 	TODO: Fix alpha
+		this.faceTexture = new THREE.TextureLoader().load( 'face_base_uv_texture.png' );
+		this.faceTexture.flipY = false;
+		// this.faceTexture.premultiplyAlpha = false;
+
+		// Instantiate a GLTFLoader
+		const gltfLoader = new GLTFLoader();
+
+		// 	Call back for setting up the base FaceMesh (this.faceModelMesh)
 		const thisObject = this;
-		function onOBJLoaded( object )
+		function onFaceBaseLoaded( gltf )
 		{
 			// 	Add to scene
-			thisObject.faceModelMesh = object.children[0];
+			thisObject.faceModelMesh = gltf.scene.children[0];
+
+			// thisObject.faceModelMesh = object.children[0];
 			thisObject.scene.add( thisObject.faceModelMesh );
-			
-			const greenWireframeMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true, visible:false } );
+
+			const greenWireframeMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: false, visible: true } );
 			thisObject.faceModelMesh.material = greenWireframeMaterial;
+
+			greenWireframeMaterial.map = thisObject.faceTexture;
 
 			// 	Set BufferAttribute usage to THREE.StreamDrawUsage for increased performance.
 			const positionAttr = thisObject.faceModelMesh.geometry.getAttribute( 'position' );
@@ -74,30 +96,23 @@ export class Renderer
 			indexAttr.usage = THREE.StreamDrawUsage;
 		}
 		
-		// load the canonical FaceMesh model
-		objLoader.load(
+		// 	Load a base mesh
+		gltfLoader.load(
 			// resource URL
-			'canonical_face_model.obj',
-			// called when resource is loaded
-			onOBJLoaded,
-			// called when loading is in progresses
-			function ( xhr ) {
-				console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded geometry' );
+			'face_base.gltf',
+			// called when the resource is loaded
+			onFaceBaseLoaded,
+			// called while loading is progressing
+			( xhr )=>{
+				console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
 			},
 			// called when loading has errors
-			function ( error ) {
-				console.log( 'An error happened', error );
+			( error )=>{
+				console.log( error );
 			}
 		);
 
-		// this.controls = new OrbitControls( this.camera, this.canvas );
-		// this.controls.update();
-
-
-		// Instantiate a loader
-		const gltfLoader = new GLTFLoader();
-
-		// Load a glTF resource
+		// Load a Glasses Model
 		gltfLoader.load(
 			// resource URL
 			'glasses.gltf',
@@ -117,20 +132,16 @@ export class Renderer
 				thisObject.faceModelMesh.add( thisObject.glassesMesh );
 
 				// 	Offset glasses' transform with default offset
-				thisObject.updateGlassesOffsetPosition( transformDict );
-				thisObject.updateGlassesOffsetScale( transformDict );
+				thisObject.updateGlassesOffsetPosition( GlassesTransformDict );
+				thisObject.updateGlassesOffsetScale( GlassesTransformDict );
 			},
 			// called while loading is progressing
-			function ( xhr ) {
-
+			( xhr )=>{
 				console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-
 			},
 			// called when loading has errors
-			function ( error ) {
-
-				console.log( 'An error happened' );
-
+			( error )=>{
+				console.log( error );
 			}
 		);
 
@@ -149,6 +160,10 @@ export class Renderer
 
 		const ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.2 );
 		this.scene.add( ambientLight );
+
+
+		// setTimeout( ()=>{ this.exportToOBJ() }, 5000);
+		// setTimeout( ()=>{ this.exportToJSON() }, 5000);
 	}
 
 	render( faceMeshResult )
@@ -168,11 +183,13 @@ export class Renderer
 			const mesh = faceGeometry.getMesh();
 			// 	5 * 468
 			const verticies = mesh.getVertexBufferList();
+
 			//  3 * 898
 			const indicies = mesh.getIndexBufferList();
 
 			// 	Get mesh BufferAttributes
 			const positionAttr = this.faceModelMesh.geometry.getAttribute( 'position' );
+			const uvAttr = this.faceModelMesh.geometry.getAttribute('uv');
 			const indexAttr = this.faceModelMesh.geometry.getIndex();
 
 			// 	Update mesh verticies
@@ -188,23 +205,12 @@ export class Renderer
 				positionAttr.array[ i * 3 + 2 ] = z;
 			}
 
-			// 	Update mesh indicies
-			for( let i = 0; i < 898; i++ )
-			{
-				// 	Index
-				const f1 = indicies[ i * 3 ];
-				const f2 = indicies[ i * 3 + 1 ];
-				const f3 = indicies[ i * 3 + 2 ];
-
-				indexAttr.array[ i * 3 ] = f1;
-				indexAttr.array[ i * 3 + 1 ] = f2;
-				indexAttr.array[ i * 3 + 2 ] = f3;
-			}
 
 			// 	Set buffer update flag
 			positionAttr.needsUpdate = true;
-			indexAttr.needsUpdate = true;
 
+			// 	Needs to update vertex normals since our vertex is updated
+			this.faceModelMesh.geometry.computeVertexNormals();
 
 			// 	Get head transformation matrix. The result is in row-major
 			const matrixArray = matrixDataToMatrix( faceGeometry.getPoseTransformMatrix() ).flat();
@@ -213,11 +219,10 @@ export class Renderer
 			// 	Copy the transformation matrix
 			this.faceModelMesh.matrix.copy( matrix );
 			this.faceModelMesh.matrixAutoUpdate = false;
-
 		}
 
+		// 	Finally render the scene
 		this.renderer.render( this.scene, this.camera );
-
 	}
 
 	updateGlassesOffsetPosition( transformDict )
@@ -231,5 +236,43 @@ export class Renderer
 		const newScale = new THREE.Vector3().copy( this.glassesMesh_defaultScale ).multiplyScalar( transformDict.scale );
 		this.glassesMesh.scale.copy( newScale );
 
+	}
+
+	exportToOBJ()
+	{
+		// Instantiate a exporter
+		const exporter = new OBJExporter();
+		// Parse the faceModelMesh
+		const res = exporter.parse( this.faceModelMesh );
+
+		// Save the file
+		const blob = new Blob( [res], { type: "text/plain;charset=utf-8" } );
+		saveAs(blob, "face_save.obj");
+	}
+
+	exportToJSON()
+	{
+		// Instantiate a exporter
+		const exporter = new GLTFExporter();
+
+		// Parse the input and generate the glTF output
+		exporter.parse(
+			this.faceModelMesh,
+			// called when the gltf has been generated
+			( gltf )=>{
+
+				// Convert JSON to Blob
+				const blob = new Blob( [[JSON.stringify(gltf)]], { type: "text/plain;charset=utf-8" } );
+				// Save the file
+				saveAs(blob, "face_save.gltf");
+
+			},
+			// called when there is an error in the generation
+			( error )=>{
+				console.log( 'An error happened' );
+			},
+			// options
+			{}
+		);
 	}
 }
