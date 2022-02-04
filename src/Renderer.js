@@ -65,10 +65,9 @@ export class Renderer
 		const objLoader = new OBJLoader2();
 		objLoader.setUseIndices(true);
 
-		// 	TODO: Fix alpha
-		this.faceTexture = new THREE.TextureLoader().load( 'face_base_uv_texture.png' );
+		// 	Load a custom face texture
+		this.faceTexture = new THREE.TextureLoader().load( 'face_effect_texture_1.png' );
 		this.faceTexture.flipY = false;
-		// this.faceTexture.premultiplyAlpha = false;
 
 		// Instantiate a GLTFLoader
 		const gltfLoader = new GLTFLoader();
