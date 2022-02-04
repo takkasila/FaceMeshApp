@@ -53,7 +53,7 @@ export class Renderer
 		// this.controls = new OrbitControls( this.camera, this.canvas );
 		// this.controls.update();
 
-		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas, alpha:true, antialias : true } );
+		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas, antialias : true } );
 		this.renderer.setSize( this.canvas.width, this.canvas.height );
 
 		// 	Scene
@@ -80,13 +80,14 @@ export class Renderer
 			// 	Add to scene
 			thisObject.faceModelMesh = gltf.scene.children[0];
 
-			// thisObject.faceModelMesh = object.children[0];
 			thisObject.scene.add( thisObject.faceModelMesh );
 
-			const greenWireframeMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: false, visible: true } );
+			const greenWireframeMaterial = new THREE.MeshBasicMaterial( { 
+				color: 0xffffff,
+				map: thisObject.faceTexture,
+				transparent: true
+			} );
 			thisObject.faceModelMesh.material = greenWireframeMaterial;
-
-			greenWireframeMaterial.map = thisObject.faceTexture;
 
 			// 	Set BufferAttribute usage to THREE.StreamDrawUsage for increased performance.
 			const positionAttr = thisObject.faceModelMesh.geometry.getAttribute( 'position' );
@@ -128,7 +129,6 @@ export class Renderer
 				thisObject.glassesMesh_defaultScale.copy( thisObject.glassesMesh.scale );
 				
 				// 	Add to the scene
-				// thisObject.scene.add( thisObject.glassesMesh );
 				thisObject.faceModelMesh.add( thisObject.glassesMesh );
 
 				// 	Offset glasses' transform with default offset
