@@ -18,8 +18,17 @@ export const GlassesTransformDict = {
 	'scale': 1.479
 }
 
+export const RenderOptions = {
+	'isOrbitalView': false,
+	'isGlasses': true,
+	'isFaceTexture': true
+};
+
 export class Renderer
 {
+	// 
+	// 	PUBLIC MEMBERS
+	// 
 	canvas;
 	scene;
 	camera;
@@ -35,8 +44,11 @@ export class Renderer
 
 	faceBaseMeshGLTF;
 
+	renderOptions;
+
 	constructor( canvas )
 	{
+		this.renderOptions = RenderOptions;
 
 		this.canvas = canvas;
 
@@ -117,7 +129,7 @@ export class Renderer
 			// resource URL
 			'glasses.gltf',
 			// called when the resource is loaded
-			function ( gltf ) {
+			( gltf )=>{
 
 				// 	Get the glasses Object3D
 				thisObject.glassesMesh = gltf.scene.children[0];
@@ -220,18 +232,46 @@ export class Renderer
 			this.faceModelMesh.matrixAutoUpdate = false;
 		}
 
+		// 	Update scene according to rendering option
+		this.updateSceneRenderOption();
+		
 		// 	Finally render the scene
 		this.renderer.render( this.scene, this.camera );
 	}
 
+	updateSceneRenderOption()
+	{
+		// 	TODO:
+		if( this.renderOptions.isOrbitalView )
+		{
+
+		}
+		else
+		{
+			
+		}
+		
+		if( this.glassesMesh !== undefined )
+		{
+			this.glassesMesh.visible = this.renderOptions.isGlasses;
+		}
+
+		if( this.faceModelMesh !== undefined )
+		{
+			this.faceModelMesh.material.visible = this.renderOptions.isFaceTexture;
+		}
+	}
+
 	updateGlassesOffsetPosition( transformDict )
 	{
+		// 	newPosition = defaultPosition + offsetPosition
 		const newPosition = new THREE.Vector3().addVectors( this.glassesMesh_defaultPosition, new THREE.Vector3( transformDict.position.x, transformDict.position.y, transformDict.position.z ) );
 		this.glassesMesh.position.copy( newPosition );
 	}
 
 	updateGlassesOffsetScale( transformDict )
 	{
+		// 	newScale = defaultScale * offsetScale
 		const newScale = new THREE.Vector3().copy( this.glassesMesh_defaultScale ).multiplyScalar( transformDict.scale );
 		this.glassesMesh.scale.copy( newScale );
 
