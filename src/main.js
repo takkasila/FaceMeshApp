@@ -76,7 +76,22 @@ function main() {
 
 	// 		Render Mode
 	const renderOptionFolder = gui.addFolder( 'RenderOptions' );
-	// renderOptionFolder.add( renderer.renderOptions, 'isOrbitalView' );
+	renderOptionFolder.add( renderer, 'isOrbitalView' ).onChange( (isOrbitalView)=>{
+		// 	Toggle to Orbit view
+		if( isOrbitalView )
+		{
+			renderer.orbitControls.enabled = true;
+			renderer.camera.position.set( 5, 5, 5 );
+			renderer.camera.lookAt( 0, 0, 0 );
+		}
+		// 	Toggle to AR view
+		else
+		{
+			renderer.orbitControls.enabled = false;
+			renderer.camera.position.set( 0, 0, 0 );
+			renderer.camera.lookAt( 0, 0, -1 );
+		}
+	});
 	renderOptionFolder.add( renderer.renderOptions, 'isGlasses' );
 	renderOptionFolder.add( renderer.renderOptions, 'isFaceTexture' );
 	renderOptionFolder.open();

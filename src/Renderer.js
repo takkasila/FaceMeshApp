@@ -19,7 +19,6 @@ export const GlassesTransformDict = {
 }
 
 export const RenderOptions = {
-	'isOrbitalView': false,
 	'isGlasses': true,
 	'isFaceTexture': true
 };
@@ -36,20 +35,20 @@ export class Renderer
 	faceModelMesh;
 	glassesMesh;
 	
-	controls;
+	orbitControls;
+	isOrbitalView = false;
+
+	renderOptions = RenderOptions;
 
 	glassesMesh_defaultPosition = new THREE.Vector3();
 	glassesMesh_defaultQuarternion = new THREE.Quaternion();
 	glassesMesh_defaultScale = new THREE.Vector3();
 
-	faceBaseMeshGLTF;
-
-	renderOptions;
-
+	// 
+	// 	CONSTRUCTOR
+	// 
 	constructor( canvas )
 	{
-		this.renderOptions = RenderOptions;
-
 		this.canvas = canvas;
 
 		this.scene = new THREE.Scene();
@@ -58,12 +57,9 @@ export class Renderer
 		this.camera.position.set( 0, 0, 0 );
 		this.camera.lookAt( 0, 0, -1 );
 
-		// 	For OrbitControl view
-		// this.camera.position.set( 5, 5, 5 );
-		// this.camera.lookAt( 0, 0, 0 );
-		
-		// this.controls = new OrbitControls( this.camera, this.canvas );
-		// this.controls.update();
+		// 	Orbital View Controller
+		this.orbitControls = new OrbitControls( this.camera, this.canvas );
+		this.orbitControls.update();
 
 		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas, antialias : true } );
 		this.renderer.setSize( this.canvas.width, this.canvas.height );
@@ -172,36 +168,30 @@ export class Renderer
 		const ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.2 );
 		this.scene.add( ambientLight );
 
-
+		// 	For saving Mesh to file
 		// setTimeout( ()=>{ this.exportToOBJ() }, 5000);
 		// setTimeout( ()=>{ this.exportToJSON() }, 5000);
 	}
 
+	// 
+	// 	PUBLIC MEMBER FUNCTIONS
+	// 
 	render( faceMeshResult )
 	{
-		// this.controls.update();
-
+		// 	Retrieve the background texture from FaceMesh result
 		const texture = new THREE.CanvasTexture( faceMeshResult.image );
 		this.scene.background = texture;
 
-		if( faceMeshResult.multiFaceGeometry ){
-
-			const faceGeometry = faceMeshResult.multiFaceGeometry[0];
-
-			if( faceGeometry === undefined )
-				return;
+		// 	Get FaceGeometry result from the FaceMesh result
+		const faceGeometry = faceMeshResult.multiFaceGeometry[0];
+		if( faceGeometry !== undefined ){
 
 			const mesh = faceGeometry.getMesh();
 			// 	5 * 468
 			const verticies = mesh.getVertexBufferList();
 
-			//  3 * 898
-			const indicies = mesh.getIndexBufferList();
-
 			// 	Get mesh BufferAttributes
 			const positionAttr = this.faceModelMesh.geometry.getAttribute( 'position' );
-			const uvAttr = this.faceModelMesh.geometry.getAttribute('uv');
-			const indexAttr = this.faceModelMesh.geometry.getIndex();
 
 			// 	Update mesh verticies
 			for( let i = 0; i < 468; i++ )
@@ -215,7 +205,6 @@ export class Renderer
 				positionAttr.array[ i * 3 + 1 ] = y;
 				positionAttr.array[ i * 3 + 2 ] = z;
 			}
-
 
 			// 	Set buffer update flag
 			positionAttr.needsUpdate = true;
@@ -241,23 +230,18 @@ export class Renderer
 
 	updateSceneRenderOption()
 	{
-		// 	TODO:
-		if( this.renderOptions.isOrbitalView )
-		{
-
-		}
-		else
-		{
-			
-		}
-		
 		if( this.glassesMesh !== undefined )
 		{
+			// 	The Glasses Mesh is a multi-component mesh.
+			// 	If we want to set the material visibility then we will have to set all of them.
+			// 	The simpler way is to set the parent mesh visibility which would 
+			// 	recursively hide all the children components if set to be invisible
 			this.glassesMesh.visible = this.renderOptions.isGlasses;
 		}
 
 		if( this.faceModelMesh !== undefined )
 		{
+			// 	Simply set the material visibility
 			this.faceModelMesh.material.visible = this.renderOptions.isFaceTexture;
 		}
 	}
@@ -274,9 +258,11 @@ export class Renderer
 		// 	newScale = defaultScale * offsetScale
 		const newScale = new THREE.Vector3().copy( this.glassesMesh_defaultScale ).multiplyScalar( transformDict.scale );
 		this.glassesMesh.scale.copy( newScale );
-
 	}
 
+	// 
+	// 	UTILITY FUNCTIONS
+	// 
 	exportToOBJ()
 	{
 		// Instantiate a exporter
