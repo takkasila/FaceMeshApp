@@ -9,6 +9,8 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
 
 import 'file-saver';
 
+export const DEFAULT_FOV = 66;
+
 export const GlassesTransformDict = {
 	'position': {
 		'x': 0
@@ -51,69 +53,42 @@ export class Renderer
 	{
 		this.canvas = canvas;
 
-		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera( 66, this.canvas.width / this.canvas.height, 0.1, 2000 );
+		// 	Create a THREE Scene and WebGL Renderer
+
 		
-		this.camera.position.set( 0, 0, 0 );
-		this.camera.lookAt( 0, 0, -1 );
+		// 	Create a Perspective Camera
+		
+		
+		// 	Scene AxesHelper
+
 
 		// 	Orbital View Controller
-		this.orbitControls = new OrbitControls( this.camera, this.canvas );
-		this.orbitControls.update();
 
-		this.renderer = new THREE.WebGLRenderer( { canvas: this.canvas, antialias : true } );
-		this.renderer.setSize( this.canvas.width, this.canvas.height );
-
-		// 	Scene
-		const axesHelper = new THREE.AxesHelper( 3 );
-		this.scene.add( axesHelper );
-
-
-		// 	Instantiate the OBJLoader2
-		const objLoader = new OBJLoader2();
-		objLoader.setUseIndices(true);
-
-		// 	Load a custom face texture
-		this.faceTexture = new THREE.TextureLoader().load( 'face_effect_texture_1.png' );
-		this.faceTexture.flipY = false;
 
 		// Instantiate a GLTFLoader
 		const gltfLoader = new GLTFLoader();
 
-		// 	Call back for setting up the base FaceMesh (this.faceModelMesh)
 		const thisObject = this;
-		function onFaceBaseLoaded( gltf )
-		{
-			// 	Add to scene
-			thisObject.faceModelMesh = gltf.scene.children[0];
-
-			thisObject.scene.add( thisObject.faceModelMesh );
-
-			const greenWireframeMaterial = new THREE.MeshBasicMaterial( { 
-				color: 0xffffff,
-				map: thisObject.faceTexture,
-				transparent: true
-			} );
-			thisObject.faceModelMesh.material = greenWireframeMaterial;
-
-			// 	Set BufferAttribute usage to THREE.StreamDrawUsage for increased performance.
-			const positionAttr = thisObject.faceModelMesh.geometry.getAttribute( 'position' );
-			positionAttr.usage = THREE.StreamDrawUsage;
-
-			const indexAttr = thisObject.faceModelMesh.geometry.getIndex();
-			indexAttr.usage = THREE.StreamDrawUsage;
-		}
-		
 		// 	Load a base mesh
 		gltfLoader.load(
+
 			// resource URL
 			'face_base.gltf',
+
 			// called when the resource is loaded
-			onFaceBaseLoaded,
+			( gltf )=>{
+				// 	Get the mesh and add to mesh scene
+
+				// 	Create a new textured material with transparent: true
+
+				// 	Optional: Set BufferAttribute(s) usage to THREE.StreamDrawUsage for increased performance.
+			},
+
 			// called while loading is progressing
 			( xhr )=>{
 				console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
 			},
+
 			// called when loading has errors
 			( error )=>{
 				console.log( error );
@@ -128,19 +103,16 @@ export class Renderer
 			( gltf )=>{
 
 				// 	Get the glasses Object3D
-				thisObject.glassesMesh = gltf.scene.children[0];
 
-				// 	Copy default glasses' transform
-				thisObject.glassesMesh_defaultPosition.copy( thisObject.glassesMesh.position );
-				thisObject.glassesMesh_defaultQuarternion.copy( thisObject.glassesMesh.quaternion );
-				thisObject.glassesMesh_defaultScale.copy( thisObject.glassesMesh.scale );
+
+				// 	Copy default glasses' transform for future transform manipulation
+
 				
 				// 	Add to the scene
-				thisObject.faceModelMesh.add( thisObject.glassesMesh );
+
 
 				// 	Offset glasses' transform with default offset
-				thisObject.updateGlassesOffsetPosition( GlassesTransformDict );
-				thisObject.updateGlassesOffsetScale( GlassesTransformDict );
+
 			},
 			// called while loading is progressing
 			( xhr )=>{
@@ -153,22 +125,15 @@ export class Renderer
 		);
 
 		// 	Add scene lights
-		const dirLight = new THREE.DirectionalLight( 0xF4E99B, 1 );
-		dirLight.position.set( 1, 1, 1 );
-		this.scene.add( dirLight );	
+		// 		Main directional light
 
-		const dirLight2 = new THREE.DirectionalLight( 0xFFFFFF, 0.5 );
-		dirLight2.position.set( -1, 1, 0 );
-		this.scene.add( dirLight2 );
 
-		const dirLight3 = new THREE.DirectionalLight( 0xFFFFFF, 0.3 );
-		dirLight3.position.set( 0, -1, 0 );
-		this.scene.add( dirLight3 );	
+		// 		Support lights
 
-		const ambientLight = new THREE.AmbientLight( 0xFFFFFF, 0.2 );
-		this.scene.add( ambientLight );
 
-		// 	For saving Mesh to file
+		// 		Ambientl ight
+
+		// 	Saving Mesh to file. For Debugging
 		// setTimeout( ()=>{ this.exportToOBJ() }, 5000);
 		// setTimeout( ()=>{ this.exportToJSON() }, 5000);
 	}
@@ -179,85 +144,33 @@ export class Renderer
 	render( faceMeshResult )
 	{
 		// 	Retrieve the background texture from FaceMesh result
-		const texture = new THREE.CanvasTexture( faceMeshResult.image );
-		this.scene.background = texture;
+		// 	and create a THREE.CanvasTexture
+		
 
 		// 	Get FaceGeometry result from the FaceMesh result
-		const faceGeometry = faceMeshResult.multiFaceGeometry[0];
-		if( faceGeometry !== undefined ){
+		// 	to update the this.faceModelMesh vertex buffer, normals, and transformation matrix
 
-			const mesh = faceGeometry.getMesh();
-			// 	5 * 468
-			const verticies = mesh.getVertexBufferList();
-
-			// 	Get mesh BufferAttributes
-			const positionAttr = this.faceModelMesh.geometry.getAttribute( 'position' );
-
-			// 	Update mesh verticies
-			for( let i = 0; i < 468; i++ )
-			{
-				// 	Position
-				const x = verticies[ i * 5 ];
-				const y = verticies[ i * 5 + 1 ];
-				const z = verticies[ i * 5 + 2 ];
-				
-				positionAttr.array[ i * 3 ] = x;
-				positionAttr.array[ i * 3 + 1 ] = y;
-				positionAttr.array[ i * 3 + 2 ] = z;
-			}
-
-			// 	Set buffer update flag
-			positionAttr.needsUpdate = true;
-
-			// 	Needs to update vertex normals since our vertex is updated
-			this.faceModelMesh.geometry.computeVertexNormals();
-
-			// 	Get head transformation matrix. The result is in row-major
-			const matrixArray = matrixDataToMatrix( faceGeometry.getPoseTransformMatrix() ).flat();
-			const matrix = new THREE.Matrix4().fromArray( matrixArray ).transpose();
-
-			// 	Copy the transformation matrix
-			this.faceModelMesh.matrix.copy( matrix );
-			this.faceModelMesh.matrixAutoUpdate = false;
-		}
 
 		// 	Update scene according to rendering option
-		this.updateSceneRenderOption();
+		
 		
 		// 	Finally render the scene
-		this.renderer.render( this.scene, this.camera );
+
 	}
 
 	updateSceneRenderOption()
 	{
-		if( this.glassesMesh !== undefined )
-		{
-			// 	The Glasses Mesh is a multi-component mesh.
-			// 	If we want to set the material visibility then we will have to set all of them.
-			// 	The simpler way is to set the parent mesh visibility which would 
-			// 	recursively hide all the children components if set to be invisible
-			this.glassesMesh.visible = this.renderOptions.isGlasses;
-		}
 
-		if( this.faceModelMesh !== undefined )
-		{
-			// 	Simply set the material visibility
-			this.faceModelMesh.material.visible = this.renderOptions.isFaceTexture;
-		}
 	}
 
 	updateGlassesOffsetPosition( transformDict )
 	{
 		// 	newPosition = defaultPosition + offsetPosition
-		const newPosition = new THREE.Vector3().addVectors( this.glassesMesh_defaultPosition, new THREE.Vector3( transformDict.position.x, transformDict.position.y, transformDict.position.z ) );
-		this.glassesMesh.position.copy( newPosition );
 	}
 
 	updateGlassesOffsetScale( transformDict )
 	{
 		// 	newScale = defaultScale * offsetScale
-		const newScale = new THREE.Vector3().copy( this.glassesMesh_defaultScale ).multiplyScalar( transformDict.scale );
-		this.glassesMesh.scale.copy( newScale );
 	}
 
 	// 
